@@ -1,0 +1,12 @@
+{
+	"name": "integrationRuntime-ReUse-LinkedService",
+	"properties": {
+		"type": "SelfHosted",
+		"typeProperties": {
+			"linkedInfo": {
+				"resourceId": "/subscriptions/4f2eb37e-c352-4f99-a45c-7c915721c84f/resourcegroups/rg_BigData/providers/Microsoft.DataFactory/factories/DF-OnPremise-BLOB-Incremental/integrationruntimes/integrationRuntime-selftHosted-OnPremises",
+				"authorizationType": "Rbac"
+			}
+		}
+	}
+}

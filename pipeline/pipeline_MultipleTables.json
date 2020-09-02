@@ -1,0 +1,126 @@
+{
+	"name": "pipeline_MultipleTables",
+	"properties": {
+		"activities": [
+			{
+				"name": "Lookup_TableNames",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "SqlServerSource",
+						"sqlReaderQuery": "SELECT '[' + TABLE_SCHEMA + '].[' + TABLE_NAME + ']' As MyTableWithSchema\n, TABLE_SCHEMA As MySchema,\nTABLE_NAME As MyTable\nFROM INFORMATION_SCHEMA.TABLES\nWHERE TABLE_NAME IN ('Customer','Sale')\n",
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "SqlServerLookupTable",
+						"type": "DatasetReference"
+					},
+					"firstRowOnly": false
+				}
+			},
+			{
+				"name": "ForEach_CopyTables",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "Lookup_TableNames",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('Lookup_TableNames').output.value",
+						"type": "Expression"
+					},
+					"isSequential": true,
+					"activities": [
+						{
+							"name": "Copy_Data_Activity",
+							"type": "Copy",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "SqlServerSource",
+									"queryTimeout": "02:00:00",
+									"partitionOption": "None"
+								},
+								"sink": {
+									"type": "DelimitedTextSink",
+									"storeSettings": {
+										"type": "AzureBlobStorageWriteSettings"
+									},
+									"formatSettings": {
+										"type": "DelimitedTextWriteSettings",
+										"quoteAllText": true,
+										"fileExtension": ".txt"
+									}
+								},
+								"enableStaging": false,
+								"translator": {
+									"type": "TabularTranslator",
+									"typeConversion": true,
+									"typeConversionSettings": {
+										"allowDataTruncation": true,
+										"treatBooleanAsNumber": false
+									}
+								}
+							},
+							"inputs": [
+								{
+									"referenceName": "SqlServerTable1",
+									"type": "DatasetReference",
+									"parameters": {
+										"SchemaName": {
+											"value": "@{item().MySchema}",
+											"type": "Expression"
+										},
+										"TableName": {
+											"value": "@{item().MyTable}",
+											"type": "Expression"
+										}
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "DelimitedText_BLOB",
+									"type": "DatasetReference",
+									"parameters": {
+										"outputFile": {
+											"value": "@concat(item().MySchema,'_',item().MyTable)",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						}
+					]
+				}
+			}
+		],
+		"annotations": [],
+		"lastPublishTime": "2020-08-30T20:30:05Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}
